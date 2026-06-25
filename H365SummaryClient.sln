@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37301.10 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "H365SummaryClient", "H365SummaryClient.csproj", "{0DB01DF0-E813-3515-0046-BEB0ABCD1367}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0DB01DF0-E813-3515-0046-BEB0ABCD1367}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0DB01DF0-E813-3515-0046-BEB0ABCD1367}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0DB01DF0-E813-3515-0046-BEB0ABCD1367}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0DB01DF0-E813-3515-0046-BEB0ABCD1367}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2CE3E5B1-2294-466E-8885-2F3008E8D572}
+	EndGlobalSection
+EndGlobal
