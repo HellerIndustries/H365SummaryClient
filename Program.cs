@@ -8,7 +8,7 @@ namespace H365SummaryClient
 {
     class Program
     {
-        private const int NOTIFICATION_H365_SUMMARY_AVAILABLE = 392;
+        private static int NotificationID;
         private const int GUID_BYTES = 16;
         private const int INT_BYTES = 4;
         private const int BUFFER_SIZE = 4096;
@@ -24,7 +24,10 @@ namespace H365SummaryClient
             if (args.Length >= 2)
                 int.TryParse(args[1], out port);
 
-            Console.WriteLine($"H365 Summary Client - Listening for NOTIFICATION_H365_SUMMARY_AVAILABLE (ID: {NOTIFICATION_H365_SUMMARY_AVAILABLE})");
+            Console.WriteLine("Please enter the Notification ID: ");
+            NotificationID = int.Parse(Console.ReadLine());
+
+            Console.WriteLine($"Heller Oven Notification Client - Listening for (ID: {NotificationID})");
             Console.WriteLine($"Connecting to {ip}:{port}...");
             Console.WriteLine("Press Ctrl+C to exit.\n");
 
@@ -91,8 +94,7 @@ namespace H365SummaryClient
                 message = Encoding.ASCII.GetString(messageBytes).TrimEnd('\0');
             }
 
-            // Check if this is the notification we're looking for
-            if (functionId == NOTIFICATION_H365_SUMMARY_AVAILABLE)
+            if (functionId == 392)
             {
                 Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] === NOTIFICATION_H365_SUMMARY_AVAILABLE Received ===");
                 Console.WriteLine($"  GUID: {packetGuid}");
@@ -117,9 +119,17 @@ namespace H365SummaryClient
                 }
                 Console.WriteLine();
             }
+
+            else if (functionId == NotificationID)
+            {
+                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] === Notification Received ===");
+                Console.WriteLine($"  GUID: {packetGuid}");
+                Console.WriteLine($"  Function ID: {functionId}");
+                Console.WriteLine($"  Message: {message}");
+                Console.WriteLine();
+            }
             else
             {
-                
             }
         }
 
