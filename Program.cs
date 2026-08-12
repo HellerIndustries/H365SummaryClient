@@ -8,49 +8,51 @@ namespace H365SummaryClient
 {
     class Program
     {
-        private static int NotificationID;
+        private const int QUERY_RESPONSE_PORT = 31010;
+        private const int NOTIFICATION_PORT = 31011;
         private const int GUID_BYTES = 16;
         private const int INT_BYTES = 4;
-        private const int BUFFER_SIZE = 4096;
+        private const int FIXED_SIZE_BUFFER = 64 * 1024;
 
         static void Main(string[] args)
         {
             string ip = "127.0.0.1";
-            int port = 31011;
 
-            // Parse command line arguments
             if (args.Length >= 1)
                 ip = args[0];
-            if (args.Length >= 2)
-                int.TryParse(args[1], out port);
 
-            Console.WriteLine("Please enter the Notification ID: ");
-            NotificationID = int.Parse(Console.ReadLine());
+            Console.Write("Please enter the Query ID: ");
+            int queryId = int.Parse(Console.ReadLine());
 
-            Console.WriteLine($"Heller Oven Notification Client - Listening for (ID: {NotificationID})");
-            Console.WriteLine($"Connecting to {ip}:{port}...");
-            Console.WriteLine("Press Ctrl+C to exit.\n");
+            Console.Write("Please enter the query payload (or press Enter for none): ");
+            string query = Console.ReadLine() ?? string.Empty;
 
             try
             {
-                using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+                using (Socket notificationSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+                using (Socket querySocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
                 {
-                    socket.Connect(new IPEndPoint(IPAddress.Parse(ip), port));
-                    Console.WriteLine("Connected! Waiting for notifications...\n");
+                    IPAddress address = IPAddress.Parse(ip);
 
-                    byte[] buffer = new byte[BUFFER_SIZE];
+                    Console.WriteLine($"Connecting to notification port {NOTIFICATION_PORT}...");
+                    notificationSocket.Connect(new IPEndPoint(address, NOTIFICATION_PORT));
 
-                    while (true)
+                    Console.WriteLine($"Connecting to query/response port {QUERY_RESPONSE_PORT}...");
+                    querySocket.Connect(new IPEndPoint(address, QUERY_RESPONSE_PORT));
+
+                    byte[] queryPacket = CreatePacket(Guid.NewGuid(), queryId, query);
+                    SendBuffer(querySocket, queryPacket);
+
+                    Console.WriteLine($"Query {queryId} sent. Waiting for its response...\n");
+
+                    byte[] response = new byte[FIXED_SIZE_BUFFER];
+                    if (!ReceiveBuffer(querySocket, response))
                     {
-                        int bytesReceived = socket.Receive(buffer);
-                        if (bytesReceived == 0)
-                        {
-                            Console.WriteLine("Connection closed by server.");
-                            break;
-                        }
-
-                        ProcessPacket(buffer, bytesReceived);
+                        Console.WriteLine("The query/response connection was closed by the server.");
+                        return;
                     }
+
+                    ProcessPacket(response, response.Length);
                 }
             }
             catch (SocketException ex)
@@ -61,9 +63,42 @@ namespace H365SummaryClient
             {
                 Console.WriteLine($"Error: {ex.Message}");
             }
+        }
 
-            Console.WriteLine("\nPress any key to exit...");
-            Console.ReadKey();
+        static byte[] CreatePacket(Guid guid, int queryId, string query)
+        {
+            byte[] messageBytes = Encoding.ASCII.GetBytes(query);
+            if (messageBytes.Length > FIXED_SIZE_BUFFER - GUID_BYTES - INT_BYTES)
+                throw new ArgumentException("The query payload is too large.", nameof(query));
+
+            byte[] packet = new byte[FIXED_SIZE_BUFFER];
+            Array.Copy(guid.ToByteArray(), 0, packet, 0, GUID_BYTES);
+            Array.Copy(BitConverter.GetBytes(queryId), 0, packet, GUID_BYTES, INT_BYTES);
+            Array.Copy(messageBytes, 0, packet, GUID_BYTES + INT_BYTES, messageBytes.Length);
+
+            return packet;
+        }
+
+        static void SendBuffer(Socket socket, byte[] buffer)
+        {
+            int offset = 0;
+            while (offset < buffer.Length)
+                offset += socket.Send(buffer, offset, buffer.Length - offset, SocketFlags.None);
+        }
+
+        static bool ReceiveBuffer(Socket socket, byte[] buffer)
+        {
+            int offset = 0;
+            while (offset < buffer.Length)
+            {
+                int bytesReceived = socket.Receive(buffer, offset, buffer.Length - offset, SocketFlags.None);
+                if (bytesReceived == 0)
+                    return false;
+
+                offset += bytesReceived;
+            }
+
+            return true;
         }
 
         static void ProcessPacket(byte[] buffer, int length)
@@ -120,16 +155,13 @@ namespace H365SummaryClient
                 Console.WriteLine();
             }
 
-            else if (functionId == NotificationID)
+            else
             {
-                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] === Notification Received ===");
+                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] === Query Response Received ===");
                 Console.WriteLine($"  GUID: {packetGuid}");
                 Console.WriteLine($"  Function ID: {functionId}");
                 Console.WriteLine($"  Message: {message}");
                 Console.WriteLine();
-            }
-            else
-            {
             }
         }
 
