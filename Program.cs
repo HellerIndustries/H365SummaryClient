@@ -21,14 +21,14 @@ namespace H365SummaryClient
             if (args.Length >= 1)
                 ip = args[0];
 
-            Console.Write("Please enter the Query ID: ");
-            int queryId = int.Parse(Console.ReadLine());
-
-            Console.Write("Please enter the query payload (or press Enter for none): ");
-            string query = Console.ReadLine() ?? string.Empty;
-
             try
             {
+                Console.Write("Please enter the Query ID: ");
+                int queryId = int.Parse(Console.ReadLine());
+
+                Console.Write("Please enter the query payload (or press Enter for none): ");
+                string query = Console.ReadLine() ?? string.Empty;
+
                 using (Socket notificationSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
                 using (Socket querySocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
                 {
@@ -62,6 +62,14 @@ namespace H365SummaryClient
             catch (Exception ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
+            }
+            finally
+            {
+                if (!Console.IsInputRedirected)
+                {
+                    Console.Write("Press Enter to close...");
+                    Console.ReadLine();
+                }
             }
         }
 
